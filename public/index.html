@@ -4,7 +4,7 @@
     <title>WebSocket demo</title>
   </head>
   <body>
-    <div id="player"></div>
+    <div id="player"></div><br />
     <label for="nickname">Name: </label><input type="text" name="nickname" id="nickname" />
     <button onClick="set_nickname()">Ok</button>
     <label for="video_id">Video ID: </label><input type="text" name="video_id" id="video_id" />
@@ -23,8 +23,8 @@
       var player;
       function onYouTubeIframeAPIReady() {
         player = new YT.Player('player', {
-          height: '360',
-          width: '640',
+          height: '900',
+          width: '1600',
           videoId: vidurl,
           events: {
             'onReady': onPlayerReady,
