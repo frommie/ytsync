@@ -16,8 +16,11 @@ class Room(object):
         self._video_id = ''
         self._last_timestamp = 0
         self._state = -1
+        self._leader = None
 
     def register(self, websocket):
+        if len(self._users) == 0:
+            self._leader = websocket
         self._users.add(User(websocket))
         return
 
@@ -97,12 +100,13 @@ async def notify_users():
         await asyncio.wait([user._socket.send(message) for user in ROOM._users])
 
 async def handle_sync(websocket, event):
-    if (event["target"]["playerInfo"]["videoData"]["video_id"]):
-        ROOM.set_video(event["target"]["playerInfo"]["videoData"]["video_id"])
-        ROOM.set_time(event["target"]["playerInfo"]["currentTime"])
-        ROOM.set_state(event["data"])
-        if ROOM._update:
-            await notify_state(websocket)
+    if ROOM._leader = websocket:
+        if event["target"]["playerInfo"]["videoData"]["video_id"]:
+            ROOM.set_video(event["target"]["playerInfo"]["videoData"]["video_id"])
+            ROOM.set_time(event["target"]["playerInfo"]["currentTime"])
+            ROOM.set_state(event["data"])
+            if ROOM._update:
+                await notify_state(websocket)
 
 async def register(websocket):
     ROOM.register(websocket)
