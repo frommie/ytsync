@@ -93,13 +93,14 @@ async def notify_state(websocket):
     if ROOM._users:  # asyncio.wait doesn't accept an empty list
         message = state_event()
         await asyncio.wait([user._socket.send(message) for user in list(filter(lambda x: x._socket != websocket, ROOM._users))])
+    ROOM._update = 0
 
 async def notify_users():
     if ROOM._users:  # asyncio.wait doesn't accept an empty list
         message = users_event()
         await asyncio.wait([user._socket.send(message) for user in ROOM._users])
 
-async def handle_sync(websocket, event):
+async def receive_sync(websocket, event):
     if ROOM._leader == websocket:
         if event["target"]["playerInfo"]["videoData"]["video_id"]:
             ROOM.set_video(event["target"]["playerInfo"]["videoData"]["video_id"])
@@ -129,7 +130,7 @@ async def counter(websocket, path):
                 ROOM.set_name(websocket, data["value"])
                 await notify_users()
             elif data["action"] == "sync":
-                await handle_sync(websocket, data["value"])
+                await receive_sync(websocket, data["value"])
             else:
                 logging.error("unsupported event: {}", data)
     finally:
