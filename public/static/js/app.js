@@ -3,7 +3,8 @@ var websocket = new WebSocket("wss://watch.frommert.eu:6789"),
     tag = document.createElement('script'),
     vidurl = '',
     player,
-    firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag = document.getElementsByTagName('script')[0],
+    sync_secs = 2;
 
 tag.src = "https://www.youtube.com/iframe_api";
 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
@@ -41,23 +42,21 @@ function onPlayerReady(event) {
 }
 
 function onPlayerStateChange(event) {
-  console.log("update!");
   sync_to_server(event);
 }
 
 function update_player(data) {
   if (vidurl != data["video_id"]) {
     vidurl = data["video_id"];
-    player.loadVideoById(vidurl, data["timestamp"]+2);
+    player.loadVideoById(vidurl, data["timestamp"]+sync_secs);
   } else {
     // get current timestamp
     // compare state
     if (data["state"] != player.getPlayerState()) {
       switch (data["state"]) {
         case 1:
-          console.log("play");
           player.playVideo();
-          player.seekTo(data["timestamp"], 1);
+          player.seekTo(data["timestamp"]+sync_secs, 1);
           break;
         case 2:
           player.pauseVideo();
@@ -65,8 +64,7 @@ function update_player(data) {
       }
     } else {
       if (Math.abs(data["timestamp"] - player.getCurrentTime()) > 1) {
-        console.log("seek");
-        player.seekTo(data["timestamp"], 1);
+        player.seekTo(data["timestamp"]+sync_secs, 1);
       }
     }
   }
@@ -75,7 +73,6 @@ function update_player(data) {
 // websocket functions
 websocket.onmessage = function (event) {
   data = JSON.parse(event.data);
-  console.log(data);
   switch (data.type) {
     case 'state':
       // update player

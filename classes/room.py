@@ -9,7 +9,7 @@ class Room(object):
         self._update = 0
         self._video_id = 'PuFrndeuzj0'
         self._last_timestamp = 0
-        self._last_update = time.time()
+        self._last_update = 0
         self._state = 2
         self._leader = None
 
@@ -64,7 +64,9 @@ class Room(object):
         return names
 
     def get_state(self):
-        video_time = self._last_timestamp + (time.time() - self._last_update)
+        video_time = 0
+        if self._last_update > 0:
+            video_time = self._last_timestamp + (time.time() - self._last_update)
         return {
             "video_id": self._video_id,
             "timestamp": video_time,
