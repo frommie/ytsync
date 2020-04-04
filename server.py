@@ -97,14 +97,16 @@ async def notify_users():
         await asyncio.wait([user._socket.send(message) for user in ROOM._users])
 
 async def handle_sync(websocket, event):
-    ROOM.set_video(event["target"]["playerInfo"]["videoData"]["video_id"])
-    ROOM.set_time(event["target"]["playerInfo"]["currentTime"])
-    ROOM.set_state(event["data"])
-    if ROOM._update:
-        await notify_state(websocket)
+    if (event["target"]["playerInfo"]["videoData"]["video_id"]):
+        ROOM.set_video(event["target"]["playerInfo"]["videoData"]["video_id"])
+        ROOM.set_time(event["target"]["playerInfo"]["currentTime"])
+        ROOM.set_state(event["data"])
+        if ROOM._update:
+            await notify_state(websocket)
 
 async def register(websocket):
     ROOM.register(websocket)
+    print("new user")
     await notify_users()
 
 
@@ -135,7 +137,7 @@ ssl_context.load_cert_chain(localhost_pem)
 
 start_server = websockets.serve(
     counter,
-    "localhost",
+    "watch.frommert.eu",
     6789,
     ssl=ssl_context
 )
