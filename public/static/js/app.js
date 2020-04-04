@@ -1,5 +1,5 @@
-var websocket = new WebSocket("wss://watch.frommert.eu:6789"),
-//var websocket = new WebSocket("ws://localhost:6789"),
+//var websocket = new WebSocket("wss://watch.frommert.eu:6789"),
+var websocket = new WebSocket("ws://localhost:6789"),
     tag = document.createElement('script'),
     vidurl = '',
     player,
@@ -79,12 +79,29 @@ websocket.onmessage = function (event) {
       update_player(data["value"])
       break;
     case 'users':
-      document.getElementById("users").innerHTML = data.value;
+      update_names(data.value);
       break;
     default:
       console.error("unsupported event", data);
   }
 };
+
+function update_names(arr) {
+  var html = "<ul>";
+  for (i = 0; i < arr.names.length; i++) {
+    html += "<li>";
+    if (arr.leader == arr.names[i]) {
+      html += "L ";
+    }
+    html += arr.names[i];
+    if (arr.leader != arr.names[i]) {
+      html += ' <a href="#" onClick="make_leader(\''+arr.names[i]+'\')">X</a>';
+    }
+    html += "</li>";
+  }
+  html += "</ul>";
+  document.getElementById("users").innerHTML = html;
+}
 
 function set_nickname() {
   var name = document.getElementById("nickname").value;
@@ -94,6 +111,14 @@ function set_nickname() {
   };
   websocket.send(JSON.stringify(event));
   document.getElementById("nickname").disabled = 1;
+}
+
+function make_leader(name) {
+  var event = {
+    action: 'makeleader',
+    value: name
+  };
+  websocket.send(JSON.stringify(event));
 }
 
 function set_video(video_id) {

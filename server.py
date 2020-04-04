@@ -36,13 +36,13 @@ async def send_state(websocket):
     message = state_event()
     await asyncio.wait([websocket.send(message)])
 
-async def notify_users(websocket):
-    if len(ROOM._users) > 1:
+async def notify_users():
+    if ROOM._users:
         message = users_event()
-        await asyncio.wait([user._socket.send(message) for user in list(filter(lambda x: x._socket != websocket, ROOM._users))])
+        await asyncio.wait([user._socket.send(message) for user in ROOM._users])
 
 async def receive_sync(websocket, event):
-    if ROOM._leader == websocket:
+    if ROOM._leader == websocket and event:
         if event["target"]["playerInfo"]["videoData"]["video_id"]:
             ROOM.update(event)
             if ROOM._update:
@@ -50,11 +50,11 @@ async def receive_sync(websocket, event):
 
 async def register(websocket):
     ROOM.register(websocket)
-    await notify_users(websocket)
+    await notify_users()
 
 async def unregister(websocket):
     ROOM.unregister(websocket)
-    await notify_users(websocket)
+    await notify_users()
 
 async def main(websocket, path):
     # register(websocket) sends user_event() to websocket
@@ -69,6 +69,9 @@ async def main(websocket, path):
                 await receive_sync(websocket, data["value"])
             elif data["action"] == "getsync":
                 await send_state(websocket)
+            elif data["action"] == "makeleader":
+                ROOM.set_leader(data["value"])
+                await notify_users()
             else:
                 logging.error("unsupported event: {}", data)
     finally:

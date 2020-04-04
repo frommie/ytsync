@@ -12,11 +12,14 @@ class Room(object):
         self._last_update = 0
         self._state = 2
         self._leader = None
+        self._max_user_id = 0
 
     def register(self, websocket):
+        name = 'guest' + str(self._max_user_id)
+        self._max_user_id += 1
         if len(self._users) == 0:
             self._leader = websocket
-        self._users.add(User(websocket))
+        self._users.add(User(websocket, name))
         return
 
     def update(self, event):
@@ -56,12 +59,22 @@ class Room(object):
                 break
         return
 
+    def set_leader(self, name):
+        for user in self._users:
+            if user._name == name:
+                self._leader = user._socket
+
     def get_user_names(self):
         names = []
+        leader = ''
         for user in self._users:
-            if user._name != '':
-                names.append(user._name)
-        return names
+            names.append(user._name)
+            if self._leader == user._socket:
+                leader = user._name
+        return {
+            "names": names,
+            "leader": leader
+        }
 
     def get_state(self):
         video_time = 0
