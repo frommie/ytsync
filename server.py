@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import pathlib
 import ssl
 import websockets
 
