@@ -30,7 +30,8 @@ body{
   overflow: auto;
 }
 #chat {
-  height: 70%;
+  margin-top: 10px;
+  height: 67%;
 }
 #users {
   height: 20%;
