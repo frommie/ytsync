@@ -5,7 +5,8 @@ var websocket = new WebSocket("wss://watch.frommert.eu:6789"),
     player,
     firstScriptTag = document.getElementsByTagName('script')[0],
     sync_secs = 0,
-    name = '';
+    name = ''
+    leading = false;
 
 tag.src = "https://www.youtube.com/iframe_api";
 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
@@ -56,7 +57,14 @@ function onPlayerReady(event) {
 }
 
 function onPlayerStateChange(event) {
-  sync_to_server(event);
+  if (leading) {
+    sync_to_server(event);
+  } else {
+    var event = {
+      action: 'getsync'
+    };
+    websocket.send(JSON.stringify(event));
+  }
 }
 
 function update_player(data) {
@@ -107,7 +115,6 @@ websocket.onmessage = function (event) {
 function update_names(arr) {
   // seek leader index
   var leader_index = 0;
-  var leading = false;
   for (i = 0; i < arr.names.length; i++) {
     if (arr.names[i] == arr.leader) {
       leader_index = i;
