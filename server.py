@@ -100,7 +100,7 @@ async def notify_users():
         await asyncio.wait([user._socket.send(message) for user in ROOM._users])
 
 async def handle_sync(websocket, event):
-    if ROOM._leader = websocket:
+    if ROOM._leader == websocket:
         if event["target"]["playerInfo"]["videoData"]["video_id"]:
             ROOM.set_video(event["target"]["playerInfo"]["videoData"]["video_id"])
             ROOM.set_time(event["target"]["playerInfo"]["currentTime"])
