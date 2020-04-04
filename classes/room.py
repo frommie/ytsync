@@ -20,7 +20,7 @@ class Room(object):
         if len(self._users) == 0:
             self._leader = websocket
         self._users.add(User(websocket, name))
-        return
+        return name
 
     def update(self, event):
         self.set_video(event["target"]["playerInfo"]["videoData"]["video_id"])
@@ -50,6 +50,11 @@ class Room(object):
             if user._socket == websocket:
                 self._users.remove(user)
                 break
+        if self._leader == websocket and self._users:
+            # new leader needed
+            for e in self._users:
+                break
+            self._leader = e._socket
         return
 
     def set_name(self, websocket, name):

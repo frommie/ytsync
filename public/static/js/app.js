@@ -4,16 +4,30 @@ var websocket = new WebSocket("wss://watch.frommert.eu:6789"),
     vidurl = '',
     player,
     firstScriptTag = document.getElementsByTagName('script')[0],
-    sync_secs = 0;
+    sync_secs = 0,
+    name = '';
 
 tag.src = "https://www.youtube.com/iframe_api";
 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
+document.getElementById("nickname").onkeypress = function(event) {
+  if (event.keyCode == 13 || event.which == 13) {
+    set_nickname();
+  }
+};
+
+document.getElementById("video_id").onkeypress = function(event) {
+  if (event.keyCode == 13 || event.which == 13) {
+    set_video();
+  }
+};
+
+
 // init youtube player
 function onYouTubeIframeAPIReady() {
   player = new YT.Player('player', {
-    height: '600',
-    width: '800',
+    height: '100%',
+    width: '100%',
     videoId: vidurl,
     events: {
       'onReady': onPlayerReady,
@@ -74,6 +88,10 @@ function update_player(data) {
 websocket.onmessage = function (event) {
   data = JSON.parse(event.data);
   switch (data.type) {
+    case 'register':
+      // receive own name
+      name = data["value"]
+      $('#nickname')[0].placeholder = "Name: "+name;
     case 'state':
       // update player
       update_player(data["value"])
@@ -87,30 +105,70 @@ websocket.onmessage = function (event) {
 };
 
 function update_names(arr) {
-  var html = "<ul>";
+  // seek leader index
+  var leader_index = 0;
+  var leading = false;
   for (i = 0; i < arr.names.length; i++) {
-    html += "<li>";
+    if (arr.names[i] == arr.leader) {
+      leader_index = i;
+      break;
+    }
+  }
+  $('#videoinput-box').hide();
+  if (name == arr.names[leader_index]) {
+    // we are the leader
+    leading = true;
+    $('#videoinput-box').show();
+  }
+
+  var html = "<ul class=\"chat-list\">";
+
+  for (i = 0; i < arr.names.length; i++) {
+    html += "<li><span class=\"clist-1\">";
     if (arr.leader == arr.names[i]) {
-      html += "L ";
+      html += "<i data-feather=\"star\"></i></span>";
+    }
+    html += "</span>";
+    if (leading) {
+      html += "<a href=\"#\" data-toggle=\"popover\" data-content=\"<a href='#' class='makeleader' id='"+arr.names[i]+"'>Make Leader</a>\">";
+    }
+
+    if (arr.names[i] == name) {
+      html += "<b>";
     }
     html += arr.names[i];
-    if (arr.leader != arr.names[i]) {
-      html += ' <a href="#" onClick="make_leader(\''+arr.names[i]+'\')">X</a>';
+    if (arr.names[i] == name) {
+      html += "</b>";
+    }
+    if (leading) {
+      html += '</a>';
     }
     html += "</li>";
   }
   html += "</ul>";
   document.getElementById("users").innerHTML = html;
+  feather.replace();
+  $(document).ready(function(){
+    $('[data-toggle="popover"]').popover({
+      placement : 'right',
+      trigger: 'focus',
+      html : true,
+      title : 'User Info'
+    });
+    $(document).on("click", ".popover .makeleader" , function() {
+      make_leader($(this)[0].id);
+    });
+  });
 }
 
 function set_nickname() {
-  var name = document.getElementById("nickname").value;
+  name = document.getElementById("nickname").value;
   var event = {
     action: 'setname',
     value: name
   };
   websocket.send(JSON.stringify(event));
-  document.getElementById("nickname").disabled = 1;
+  document.getElementById("nickname-box").innerHTML = "<b>"+name+"</b>";
 }
 
 function make_leader(name) {

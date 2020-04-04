@@ -49,7 +49,12 @@ async def receive_sync(websocket, event):
                 await notify_state(websocket)
 
 async def register(websocket):
-    ROOM.register(websocket)
+    name = ROOM.register(websocket)
+    message = {
+        "type": "register",
+        "value": name
+    }
+    await websocket.send(json.dumps(message))
     await notify_users()
 
 async def unregister(websocket):
@@ -70,8 +75,9 @@ async def main(websocket, path):
             elif data["action"] == "getsync":
                 await send_state(websocket)
             elif data["action"] == "makeleader":
-                ROOM.set_leader(data["value"])
-                await notify_users()
+                if websocket == ROOM._leader:
+                    ROOM.set_leader(data["value"])
+                    await notify_users()
             else:
                 logging.error("unsupported event: {}", data)
     finally:
