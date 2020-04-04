@@ -1,5 +1,5 @@
-//var websocket = new WebSocket("wss://watch.frommert.eu:6789"),
-var websocket = new WebSocket("ws://localhost:6789"),
+var websocket = new WebSocket("wss://watch.frommert.eu:6789"),
+//var websocket = new WebSocket("ws://localhost:6789"),
     tag = document.createElement('script'),
     vidurl = '',
     player,
