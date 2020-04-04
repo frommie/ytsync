@@ -10,6 +10,10 @@ logging.basicConfig()
 class Room(object):
     def __init__(self):
         self._users = set()
+        self._update = 0
+        self._video_id = ''
+        self._last_timestamp = 0
+        self._state = -1
 
     def register(self, websocket):
         self._users.add(User(websocket))
@@ -36,6 +40,30 @@ class Room(object):
                 names.append(user._name)
         return names
 
+    def set_video(self, video_id):
+        if self._video_id != video_id:
+            self._video_id = video_id
+            self._update = 1
+
+    def set_time(self, timestamp):
+        if self._last_timestamp != timestamp:
+            self._last_timestamp = timestamp
+            self._update = 1
+
+    def set_state(self, state):
+        # 1 = playing
+        # 2 = pause
+        if self._state != state:
+            self._state = state
+            self._update = 1
+
+    def get_state(self):
+        return {
+            "video_id": self._video_id,
+            "timestamp": self._last_timestamp,
+            "state": self._state
+        }
+
 class User(object):
     def __init__(self, websocket):
         self._socket = websocket
@@ -51,20 +79,27 @@ STATE = {"value": 0}
 ROOM = Room()
 
 def state_event():
-    return json.dumps({"type": "state", **STATE})
+    return json.dumps({"type": "state", "value": ROOM.get_state()})
 
 def users_event():
     return json.dumps({"type": "users", "value": ROOM.get_user_names()})
 
-async def notify_state():
+async def notify_state(websocket):
     if ROOM._users:  # asyncio.wait doesn't accept an empty list
         message = state_event()
-        await asyncio.wait([user._socket.send(message) for user in ROOM._users])
+        await asyncio.wait([user._socket.send(message) for user in list(filter(lambda x: x._socket != websocket, ROOM._users))])
 
 async def notify_users():
     if ROOM._users:  # asyncio.wait doesn't accept an empty list
         message = users_event()
         await asyncio.wait([user._socket.send(message) for user in ROOM._users])
+
+async def handle_sync(websocket, event):
+    ROOM.set_video(event["target"]["playerInfo"]["videoData"]["video_id"])
+    ROOM.set_time(event["target"]["playerInfo"]["currentTime"])
+    ROOM.set_state(event["data"])
+    if ROOM._update:
+        await notify_state(websocket)
 
 async def register(websocket):
     ROOM.register(websocket)
@@ -82,15 +117,11 @@ async def counter(websocket, path):
         await websocket.send(state_event())
         async for message in websocket:
             data = json.loads(message)
-            if data["action"] == "minus":
-                STATE["value"] -= 1
-                await notify_state()
-            elif data["action"] == "plus":
-                STATE["value"] += 1
-                await notify_state()
-            elif data["action"] == "setname":
+            if data["action"] == "setname":
                 ROOM.set_name(websocket, data["value"])
                 await notify_users()
+            elif data["action"] == "sync":
+                await handle_sync(websocket, data["value"])
             else:
                 logging.error("unsupported event: {}", data)
     finally:
