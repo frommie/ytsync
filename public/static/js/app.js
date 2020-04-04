@@ -4,7 +4,7 @@ var websocket = new WebSocket("wss://watch.frommert.eu:6789"),
     vidurl = '',
     player,
     firstScriptTag = document.getElementsByTagName('script')[0],
-    sync_secs = 2;
+    sync_secs = 0;
 
 tag.src = "https://www.youtube.com/iframe_api";
 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
