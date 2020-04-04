@@ -6,7 +6,8 @@ var websocket = new WebSocket("wss://watch.frommert.eu:6789"),
     firstScriptTag = document.getElementsByTagName('script')[0],
     sync_secs = 0,
     name = ''
-    leading = false;
+    leading = false,
+    paused = false;
 
 tag.src = "https://www.youtube.com/iframe_api";
 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
@@ -57,13 +58,23 @@ function onPlayerReady(event) {
 }
 
 function onPlayerStateChange(event) {
+  console.log(event);
+  if (event.data == 2) {
+    console.log("paused");
+    paused = true;
+  } else {
+    paused = false;
+  }
   if (leading) {
     sync_to_server(event);
   } else {
-    var event = {
-      action: 'getsync'
-    };
-    websocket.send(JSON.stringify(event));
+    if (!paused) { // allow pause
+      console.log("sync!");
+      var event = {
+        action: 'getsync'
+      };
+      websocket.send(JSON.stringify(event));
+    }
   }
 }
 
@@ -74,18 +85,21 @@ function update_player(data) {
   } else {
     // get current timestamp
     // compare state
-    if (data["state"] != player.getPlayerState()) {
+    console.log("test");
+    console.log(paused);
+    if (data["state"] != player.getPlayerState() && !paused) {
       switch (data["state"]) {
         case 1:
           player.playVideo();
           player.seekTo(data["timestamp"]+sync_secs, 1);
           break;
         case 2:
+          console.log(data);
           player.pauseVideo();
           break;
       }
     } else {
-      if (Math.abs(data["timestamp"] - player.getCurrentTime()) > 1) {
+      if (Math.abs(data["timestamp"] - player.getCurrentTime()) > 1 && !paused) {
         player.seekTo(data["timestamp"]+sync_secs, 1);
       }
     }

@@ -10,7 +10,7 @@ class Room(object):
         self._video_id = 'PuFrndeuzj0'
         self._last_timestamp = 0
         self._last_update = 0
-        self._state = 2
+        self._state = 1
         self._leader = None
         self._max_user_id = 0
 
