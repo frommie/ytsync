@@ -90,7 +90,7 @@ def users_event():
     return json.dumps({"type": "users", "value": ROOM.get_user_names()})
 
 async def notify_state(websocket):
-    if ROOM._users:  # asyncio.wait doesn't accept an empty list
+    if len(ROOM._users) > 1:
         message = state_event()
         await asyncio.wait([user._socket.send(message) for user in list(filter(lambda x: x._socket != websocket, ROOM._users))])
     ROOM._update = 0
