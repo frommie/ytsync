@@ -7,7 +7,8 @@ var websocket = new WebSocket("wss://watch.frommert.eu:6789"),
     sync_secs = 0,
     name = ''
     leading = false,
-    paused = false;
+    paused = false,
+    init = true;
 
 tag.src = "https://www.youtube.com/iframe_api";
 firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
@@ -31,6 +32,10 @@ function onYouTubeIframeAPIReady() {
     height: '100%',
     width: '100%',
     videoId: vidurl,
+    playerVars: {
+      'autoplay': 1,
+      'controls': 1
+    },
     events: {
       'onReady': onPlayerReady,
       'onStateChange': onPlayerStateChange
@@ -55,7 +60,7 @@ function sync_to_server() {
 
 // youtube functions
 function onPlayerReady(event) {
-  player.mute()
+  player.mute();
   // get current video from server
   var event = {
     action: 'getsync'
@@ -114,6 +119,9 @@ function update_player(data) {
         player.seekTo(data["timestamp"]+sync_secs, 1);
       }
     }
+  }
+  if (init) {
+    player.unMute();
   }
 }
 
