@@ -43,7 +43,7 @@ async def notify_users():
 
 async def receive_sync(websocket, event):
     if ROOM._leader == websocket and event:
-        if event["target"]["playerInfo"]["videoData"]["video_id"]:
+        if event:
             ROOM.update(event)
             if ROOM._update:
                 await notify_state(websocket)

@@ -23,9 +23,9 @@ class Room(object):
         return name
 
     def update(self, event):
-        self.set_video(event["target"]["playerInfo"]["videoData"]["video_id"])
-        self.set_time(event["target"]["playerInfo"]["currentTime"])
-        self.set_state(event["data"])
+        self.set_video(event["video_id"])
+        self.set_time(event["time"])
+        self.set_state(event["state"])
         self._last_update = time.time()
 
     def set_video(self, video_id):

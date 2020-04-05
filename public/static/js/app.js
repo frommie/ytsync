@@ -1,5 +1,5 @@
-var websocket = new WebSocket("wss://watch.frommert.eu:6789"),
-//var websocket = new WebSocket("ws://localhost:6789"),
+//var websocket = new WebSocket("wss://watch.frommert.eu:6789"),
+var websocket = new WebSocket("ws://localhost:6789"),
     tag = document.createElement('script'),
     vidurl = '',
     player,
@@ -38,13 +38,19 @@ function onYouTubeIframeAPIReady() {
   });
 }
 
-function sync_to_server(event) {
-  // send current video url, state and seconds to all users
-  var event = {
-    action: 'sync',
-    value: event
-  };
-  websocket.send(JSON.stringify(event));
+function sync_to_server() {
+  if (player.getPlayerState() != 3) {
+    // send current video url, state and seconds to all users
+    var event = {
+      action: 'sync',
+      value: {
+        'state': player.getPlayerState(),
+        'video_id': vidurl,
+        'time': player.getCurrentTime()
+      }
+    };
+    websocket.send(JSON.stringify(event));
+  }
 }
 
 // youtube functions
@@ -58,24 +64,32 @@ function onPlayerReady(event) {
 }
 
 function onPlayerStateChange(event) {
-  console.log(event);
-  if (event.data == 2) {
-    console.log("paused");
-    paused = true;
-  } else {
-    paused = false;
-  }
   if (leading) {
-    sync_to_server(event);
+    sync_to_server();
   } else {
     if (!paused) { // allow pause
-      console.log("sync!");
       var event = {
         action: 'getsync'
       };
       websocket.send(JSON.stringify(event));
     }
   }
+}
+
+function toggle_pause() {
+  if (paused) {
+    var event = {
+      action: 'getsync'
+    };
+    websocket.send(JSON.stringify(event));
+    paused = false;
+    $('#togglepause')[0].innerHTML = '<i data-feather="pause"></i>';
+  } else {
+    player.pauseVideo();
+    paused = true;
+    $('#togglepause')[0].innerHTML = '<i data-feather="play"></i>';
+  }
+  feather.replace();
 }
 
 function update_player(data) {
@@ -85,8 +99,6 @@ function update_player(data) {
   } else {
     // get current timestamp
     // compare state
-    console.log("test");
-    console.log(paused);
     if (data["state"] != player.getPlayerState() && !paused) {
       switch (data["state"]) {
         case 1:
@@ -94,7 +106,6 @@ function update_player(data) {
           player.seekTo(data["timestamp"]+sync_secs, 1);
           break;
         case 2:
-          console.log(data);
           player.pauseVideo();
           break;
       }
@@ -136,10 +147,12 @@ function update_names(arr) {
     }
   }
   $('#videoinput-box').hide();
+  $('#pause').show();
   if (name == arr.names[leader_index]) {
     // we are the leader
     leading = true;
     $('#videoinput-box').show();
+    $('#pause').hide();
   }
 
   var html = "<ul class=\"chat-list\">";
